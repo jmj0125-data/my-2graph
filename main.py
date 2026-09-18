@@ -532,3 +532,46 @@ st.text_area(
 )
 
 st.markdown("---")
+
+# ---------------------------------------------------------
+# 그래프 8. 총 관객이 많은 영화는 무슨 장르의 영화인가
+# ---------------------------------------------------------
+st.subheader("8. 총 관객이 많은 영화는 무슨 장르의 영화인가")
+
+fig8 = px.scatter(
+    df,
+    x="days_in_top10",
+    y="total_audi",
+    color="genre",
+    hover_name="movieNm",
+    labels={
+        "days_in_top10": "10위권에 머문 날수",
+        "total_audi": "총 관객",
+        "genre": "장르"
+    },
+    title="총 관객이 많은 영화는 무슨 장르의 영화인가"
+)
+
+fig8.update_traces(
+    hovertemplate=(
+        "<b>%{hovertext}</b><br>"
+        "10위권에 머문 날수: %{x}일<br>"
+        "총 관객: %{y:,.0f}명"
+        "<extra></extra>"
+    )
+)
+
+fig8.update_layout(height=600)
+
+st.plotly_chart(fig8, width="stretch")
+
+st.markdown("---")
+st.subheader("💡 이 그래프로 알 수 있는 것")
+st.text_area(
+    "설명 문장을 직접 작성해 보세요.",
+    placeholder="예: 총 관객이 많은 영화가 어떤 장르에 많이 분포하는지 살펴볼 수 있습니다.",
+    key="graph8_description",
+    height=80
+)
+
+st.markdown("---")
