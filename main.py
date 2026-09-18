@@ -370,3 +370,86 @@ st.text_area(
 )
 
 st.markdown("---")
+# ============================================================
+# 6. 개봉일 스크린수와 총 관객의 관계 - 버블 그래프
+# ============================================================
+
+st.markdown("---")
+st.header("6. 개봉일 스크린수와 총 관객의 관계 - 첫 주 관객 버블")
+
+bubble_data = df[
+    [
+        "movieNm",
+        "genre",
+        "first_scrn",
+        "total_audi",
+        "first_week_audi"
+    ]
+].copy()
+
+# 필요한 데이터가 없는 행 제외
+bubble_data = bubble_data.dropna(
+    subset=[
+        "movieNm",
+        "genre",
+        "first_scrn",
+        "total_audi",
+        "first_week_audi"
+    ]
+)
+
+# 첫 주 관객이 0 이하인 데이터 제외
+bubble_data = bubble_data[
+    bubble_data["first_week_audi"] > 0
+]
+
+fig6 = px.scatter(
+    bubble_data,
+    x="first_scrn",
+    y="total_audi",
+    color="genre",
+    size="first_week_audi",
+    size_max=45,
+    hover_name="movieNm",
+    title="개봉일 스크린수와 총 관객 - 첫 주 관객을 크기로 표현",
+    labels={
+        "first_scrn": "개봉일 스크린수",
+        "total_audi": "총 관객",
+        "first_week_audi": "첫 주 관객",
+        "genre": "장르"
+    }
+)
+
+fig6.update_traces(
+    marker=dict(
+        opacity=0.7
+    ),
+    hovertemplate=(
+        "<b>%{hovertext}</b><br>"
+        "개봉일 스크린수: %{x:,.0f}개<br>"
+        "총 관객: %{y:,.0f}명<br>"
+        "첫 주 관객: %{marker.size:,.0f}명"
+        "<extra></extra>"
+    )
+)
+
+fig6.update_layout(
+    height=700,
+    xaxis_title="개봉일 스크린수",
+    yaxis_title="총 관객",
+    legend_title="장르"
+)
+
+st.plotly_chart(fig6, width="stretch")
+
+# 설명 영역
+st.markdown("---")
+st.subheader("💡 이 그래프로 알 수 있는 것")
+st.text_area(
+    "설명 문장을 직접 작성해 보세요.",
+    placeholder="예: 첫 주 관객이 많았던 영화가 어떤 위치에 분포하는지 살펴볼 수 있다.",
+    key="graph6_description",
+    height=80
+)
+
+st.markdown("---")
