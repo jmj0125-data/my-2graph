@@ -15,7 +15,10 @@ st.title("영화 데이터 그래프 도감 2 - 분포와 관계")
 DATA_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
 
 
+# ============================================================
 # 데이터 불러오기
+# ============================================================
+
 @st.cache_data
 def load_data():
     df = pd.read_csv(DATA_URL)
@@ -40,18 +43,20 @@ def load_data():
     # 빈 장르는 미상으로 처리
     df.loc[df["genre"] == "", "genre"] = "미상"
 
-    # 관객 수를 숫자로 변환
-    df["first_scrn"] = pd.to_numeric(df["first_scrn"], errors="coerce")
-    df["first_show"] = pd.to_numeric(df["first_show"], errors="coerce")
-    df["first_week_audi"] = pd.to_numeric(
-        df["first_week_audi"], errors="coerce"
-    )
-    df["total_audi"] = pd.to_numeric(
-        df["total_audi"], errors="coerce"
-    )
-    df["days_in_top10"] = pd.to_numeric(
-        df["days_in_top10"], errors="coerce"
-    )
+    # 숫자형 데이터 변환
+    numeric_columns = [
+        "first_scrn",
+        "first_show",
+        "first_week_audi",
+        "total_audi",
+        "days_in_top10"
+    ]
+
+    for column in numeric_columns:
+        df[column] = pd.to_numeric(
+            df[column],
+            errors="coerce"
+        )
 
     return df
 
@@ -97,7 +102,6 @@ fig1.update_layout(
 
 st.plotly_chart(fig1, width="stretch")
 
-# 설명 영역
 st.markdown("---")
 st.subheader("💡 이 그래프로 알 수 있는 것")
 st.text_area(
@@ -115,23 +119,21 @@ st.text_area(
 st.markdown("---")
 st.header("2. 장르 안에 들어 있는 영화")
 
-# 영화별 총 관객을 기준으로 트리맵 구성
 treemap_data = df[
     ["genre", "movieNm", "total_audi"]
 ].copy()
 
-# 영화명이 비어 있는 경우 제외
+# 영화명이 없는 데이터 제외
 treemap_data = treemap_data[
     treemap_data["movieNm"].notna()
     & (treemap_data["movieNm"].astype(str).str.strip() != "")
 ]
 
-# 총 관객이 없는 경우 제외
+# 총 관객이 없는 데이터 제외
 treemap_data = treemap_data[
     treemap_data["total_audi"].notna()
 ]
 
-# 트리맵
 fig2 = px.treemap(
     treemap_data,
     path=["genre", "movieNm"],
@@ -153,13 +155,101 @@ fig2.update_layout(
 
 st.plotly_chart(fig2, width="stretch")
 
-# 설명 영역
 st.markdown("---")
 st.subheader("💡 이 그래프로 알 수 있는 것")
 st.text_area(
     "설명 문장을 직접 작성해 보세요.",
     placeholder="예: 장르별로 어떤 영화가 많은 관객을 모았는지 비교할 수 있다.",
     key="graph2_description",
+    height=80
+)
+
+
+# ============================================================
+# 3. 총 관객 히스토그램
+# ============================================================
+
+st.markdown("---")
+st.header("3. 영화별 총 관객 분포")
+
+hist_data = df[
+    ["movieNm", "total_audi"]
+].dropna()
+
+fig3 = px.histogram(
+    hist_data,
+    x="total_audi",
+    nbins=20,
+    title="영화별 총 관객 분포",
+    labels={
+        "total_audi": "총 관객",
+        "count": "영화 편수"
+    }
+)
+
+fig3.update_traces(
+    hovertemplate=(
+        "총 관객 구간: %{x}<br>"
+        "영화 편수: %{y}편"
+        "<extra></extra>"
+    )
+)
+
+fig3.update_layout(
+    height=550,
+    xaxis_title="총 관객",
+    yaxis_title="영화 편수"
+)
+
+st.plotly_chart(fig3, width="stretch")
+
+
+# ------------------------------------------------------------
+# 가장 많이 몰려 있는 구간 계산
+# ------------------------------------------------------------
+
+if len(hist_data) > 0:
+    # 히스토그램과 동일하게 20개 구간으로 나누기
+    min_audi = hist_data["total_audi"].min()
+    max_audi = hist_data["total_audi"].max()
+
+    bins = pd.cut(
+        hist_data["total_audi"],
+        bins=20,
+        include_lowest=True
+    )
+
+    bin_counts = bins.value_counts().sort_index()
+
+    most_common_bin = bin_counts.idxmax()
+
+    # 가장 많이 관객을 모은 영화
+    max_audi_row = hist_data.loc[
+        hist_data["total_audi"].idxmax()
+    ]
+
+    max_movie = max_audi_row["movieNm"]
+    max_audi = max_audi_row["total_audi"]
+
+    # 구간의 시작/끝 값
+    bin_start = most_common_bin.left
+    bin_end = most_common_bin.right
+
+    st.info(
+        f"📊 **대부분의 영화가 몰려 있는 구간:** "
+        f"{bin_start:,.0f}명 ~ {bin_end:,.0f}명\n\n"
+        f"🏆 **가장 관객이 많은 영화:** "
+        f"{max_movie} ({max_audi:,.0f}명)"
+    )
+
+
+# 설명 영역
+st.markdown("---")
+st.subheader("💡 이 그래프로 알 수 있는 것")
+st.text_area(
+    "설명 문장을 직접 작성해 보세요.",
+    placeholder="예: 대부분의 영화가 어느 정도의 총 관객 구간에 몰려 있는지 알 수 있다.",
+    key="graph3_description",
     height=80
 )
 
